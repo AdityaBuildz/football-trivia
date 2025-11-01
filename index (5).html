@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Football Trivia Challenge</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+            padding: 40px;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            color: #1e3c72;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-emoji {
+            font-size: 1.2em;
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        /* Category Selection */
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .category-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 20px;
+            border-radius: 12px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .category-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .category-btn.random {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            grid-column: 1 / -1;
+        }
+
+        /* Scoreboard */
+        .scoreboard {
+            background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            text-align: center;
+        }
+
+        .score-item {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+        }
+
+        .score-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .score-value {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        /* Question */
+        .question-container {
+            margin-bottom: 30px;
+        }
+
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            color: #666;
+        }
+
+        .question-text {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 12px;
+            font-size: 1.3em;
+            color: #333;
+            margin-bottom: 20px;
+            border-left: 5px solid #667eea;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .option-btn {
+            background: white;
+            border: 2px solid #e0e0e0;
+            padding: 18px 20px;
+            border-radius: 10px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            position: relative;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            border-color: #667eea;
+            background: #f8f9ff;
+            transform: translateX(5px);
+        }
+
+        .option-btn:disabled {
+            cursor: not-allowed;
+        }
+
+        .option-btn.correct {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+
+        .option-btn.wrong {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+
+        .option-btn .option-number {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        .feedback {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: bold;
+            text-align: center;
+            display: none;
+        }
+
+        .feedback.show {
+            display: block;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .feedback.correct {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #28a745;
+        }
+
+        .feedback.wrong {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #dc3545;
+        }
+
+        .next-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .next-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .next-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Summary */
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+        }
+
+        .total-points {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            grid-column: 1 / -1;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .action-buttons button {
+            flex: 1;
+            padding: 15px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .play-again-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .play-again-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+        }
+
+        .streak-bonus {
+            background: #fff3cd;
+            color: #856404;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            text-align: center;
+            font-weight: bold;
+            border: 2px solid #ffc107;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .category-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .scoreboard {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Category Selection Screen -->
+        <div id="categoryScreen" class="screen active">
+            <h1><span class="header-emoji">⚽</span> Football Trivia Challenge <span class="header-emoji">⚽</span></h1>
+            <p class="subtitle">Test your football knowledge!</p>
+            <div class="category-grid">
+                <button class="category-btn" onclick="startQuiz('La Liga')">La Liga</button>
+                <button class="category-btn" onclick="startQuiz('Premier League')">Premier League</button>
+                <button class="category-btn" onclick="startQuiz('World Cup')">World Cup</button>
+                <button class="category-btn" onclick="startQuiz('Club Football')">Club Football</button>
+                <button class="category-btn" onclick="startQuiz('Legends')">Legends</button>
+                <button class="category-btn" onclick="startQuiz('Records')">Records</button>
+                <button class="category-btn random" onclick="startQuiz('Random')">🎲 Random</button>
+            </div>
+        </div>
+
+        <!-- Quiz Screen -->
+        <div id="quizScreen" class="screen">
+            <h1><span class="header-emoji">⚽</span> Football Trivia <span class="header-emoji">⚽</span></h1>
+            
+            <!-- Scoreboard -->
+            <div class="scoreboard">
+                <div class="score-item">
+                    <div class="score-label">Points</div>
+                    <div class="score-value" id="currentPoints">0</div>
+                </div>
+                <div class="score-item">
+                    <div class="score-label">Question</div>
+                    <div class="score-value" id="questionNumber">1/10</div>
+                </div>
+                <div class="score-item">
+                    <div class="score-label">Streak</div>
+                    <div class="score-value" id="currentStreak">0</div>
+                </div>
+                <div class="score-item">
+                    <div class="score-label">Correct</div>
+                    <div class="score-value" id="correctCount">0</div>
+                </div>
+            </div>
+
+            <div class="question-container">
+                <div class="question-header">
+                    <span id="categoryName">Category</span>
+                    <span id="difficulty">Difficulty</span>
+                </div>
+                <div class="question-text" id="questionText"></div>
+                <div class="options" id="optionsContainer"></div>
+                <div class="feedback" id="feedback"></div>
+                <div id="streakBonus" class="streak-bonus" style="display: none;"></div>
+            </div>
+
+            <button class="next-btn" id="nextBtn" onclick="nextQuestion()" disabled>Next Question</button>
+        </div>
+
+        <!-- Summary Screen -->
+        <div id="summaryScreen" class="screen">
+            <h1><span class="header-emoji">🏆</span> Quiz Complete! <span class="header-emoji">🏆</span></h1>
+            
+            <div class="summary-stats">
+                <div class="stat-card">
+                    <div class="stat-label">Questions</div>
+                    <div class="stat-value" id="totalQuestions">10</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Correct</div>
+                    <div class="stat-value" id="finalCorrect">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Wrong</div>
+                    <div class="stat-value" id="finalWrong">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Accuracy</div>
+                    <div class="stat-value" id="accuracy">0%</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Longest Streak</div>
+                    <div class="stat-value" id="longestStreak">0</div>
+                </div>
+                <div class="stat-card total-points">
+                    <div class="stat-label">Total Points</div>
+                    <div class="stat-value" id="finalPoints">0</div>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="play-again-btn" onclick="resetGame()">Play Again</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Constants
+        const CORRECT_POINTS = 10;
+        const BONUS_FROM_STREAK = 3;
+        const BONUS_POINTS = 5;
+        const QUESTIONS_PER_GAME = 10;
+
+        // Questions data
+        const questions = [
+            // World Cup
+            {"id": 1, "category": "World Cup", "difficulty": "easy",
+             "question": "Which country won the FIFA World Cup in 2022?",
+             "options": ["France", "Argentina", "Croatia", "Brazil"],
+             "answer_index": 1},
+
+            {"id": 2, "category": "World Cup", "difficulty": "medium",
+             "question": "Who scored the winning goal in the 2014 FIFA World Cup Final?",
+             "options": ["Mario Götze", "Lionel Messi", "Thomas Müller", "Mesut Özil"],
+             "answer_index": 0},
+
+            {"id": 3, "category": "World Cup", "difficulty": "easy",
+             "question": "Which country has won the most FIFA World Cups?",
+             "options": ["Brazil", "Germany", "Italy", "Argentina"],
+             "answer_index": 0},
+
+            {"id": 4, "category": "World Cup", "difficulty": "medium",
+             "question": "Who won the Golden Boot at the 2018 FIFA World Cup?",
+             "options": ["Harry Kane", "Kylian Mbappé", "Antoine Griezmann", "Romelu Lukaku"],
+             "answer_index": 0},
+
+            {"id": 5, "category": "World Cup", "difficulty": "hard",
+             "question": "Which African nation reached the World Cup semi-final for the first time in 2022?",
+             "options": ["Morocco", "Senegal", "Ghana", "Nigeria"],
+             "answer_index": 0},
+
+            {"id": 6, "category": "World Cup", "difficulty": "medium",
+             "question": "Who captained Italy to victory in the 2006 FIFA World Cup?",
+             "options": ["Fabio Cannavaro", "Andrea Pirlo", "Gianluigi Buffon", "Francesco Totti"],
+             "answer_index": 0},
+
+            {"id": 7, "category": "World Cup", "difficulty": "hard",
+             "question": "Which player has appeared in the most FIFA World Cup tournaments?",
+             "options": ["Lionel Messi", "Cristiano Ronaldo", "Lothar Matthäus", "Rafa Márquez"],
+             "answer_index": 2},
+
+            {"id": 8, "category": "World Cup", "difficulty": "medium",
+             "question": "Which country hosted the first FIFA World Cup in 1930?",
+             "options": ["Uruguay", "Brazil", "Italy", "Argentina"],
+             "answer_index": 0},
+
+            {"id": 9, "category": "World Cup", "difficulty": "medium",
+             "question": "Which team won the 2010 FIFA World Cup?",
+             "options": ["Spain", "Netherlands", "Germany", "Italy"],
+             "answer_index": 0},
+
+            {"id": 10, "category": "World Cup", "difficulty": "medium",
+             "question": "Who was awarded the Golden Ball (Best Player) in the 2014 World Cup?",
+             "options": ["Lionel Messi", "James Rodríguez", "Thomas Müller", "Neymar"],
+             "answer_index": 0},
+
+            // Club Football
+            {"id": 11, "category": "Club Football", "difficulty": "easy",
+             "question": "Which club has won the most UEFA Champions League titles?",
+             "options": ["AC Milan", "Liverpool", "Real Madrid", "Bayern Munich"],
+             "answer_index": 2},
+
+            {"id": 12, "category": "Club Football", "difficulty": "medium",
+             "question": "Who scored the dramatic 93rd-minute equalizer for Manchester United in the 1999 UCL Final?",
+             "options": ["Ole Gunnar Solskjær", "Teddy Sheringham", "David Beckham", "Paul Scholes"],
+             "answer_index": 1},
+
+            {"id": 13, "category": "Club Football", "difficulty": "hard",
+             "question": "Which club won the first European Cup in 1956?",
+             "options": ["Real Madrid", "Benfica", "AC Milan", "Barcelona"],
+             "answer_index": 0},
+
+            {"id": 14, "category": "Club Football", "difficulty": "medium",
+             "question": "Which player has the most UEFA Champions League titles?",
+             "options": ["Cristiano Ronaldo", "Francisco Gento", "Toni Kroos", "Paolo Maldini"],
+             "answer_index": 1},
+
+            {"id": 15, "category": "Club Football", "difficulty": "medium",
+             "question": "Which club completed a famous comeback against PSG in 2017, overturning a 4-0 deficit?",
+             "options": ["Barcelona", "Real Madrid", "Chelsea", "Manchester City"],
+             "answer_index": 0},
+
+            {"id": 16, "category": "Club Football", "difficulty": "medium",
+             "question": "Who managed Chelsea to their first Champions League win in 2012?",
+             "options": ["Roberto Di Matteo", "José Mourinho", "Carlo Ancelotti", "Frank Lampard"],
+             "answer_index": 0},
+
+            {"id": 17, "category": "Club Football", "difficulty": "medium",
+             "question": "Which German club won the Champions League in 2013?",
+             "options": ["Bayern Munich", "Borussia Dortmund", "RB Leipzig", "Hamburg"],
+             "answer_index": 0},
+
+            {"id": 18, "category": "Club Football", "difficulty": "hard",
+             "question": "Which club won the UEFA Europa League in 2021?",
+             "options": ["Villarreal", "Manchester United", "Sevilla", "Inter Milan"],
+             "answer_index": 0},
+
+            {"id": 19, "category": "Club Football", "difficulty": "medium",
+             "question": "Which club is known as 'The Old Lady'?",
+             "options": ["Juventus", "Inter Milan", "AC Milan", "Roma"],
+             "answer_index": 0},
+
+            {"id": 20, "category": "Club Football", "difficulty": "hard",
+             "question": "Which team won the 1993 Champions League, the first under its new name?",
+             "options": ["Marseille", "AC Milan", "Ajax", "Real Madrid"],
+             "answer_index": 0},
+
+            // Premier League
+            {"id": 21, "category": "Premier League", "difficulty": "easy",
+             "question": "Which club is nicknamed 'The Red Devils'?",
+             "options": ["Liverpool", "Manchester United", "Chelsea", "Arsenal"],
+             "answer_index": 1},
+
+            {"id": 22, "category": "Premier League", "difficulty": "medium",
+             "question": "Who won the Premier League in the 2015-16 season against all odds?",
+             "options": ["Leicester City", "Liverpool", "Chelsea", "Arsenal"],
+             "answer_index": 0},
+
+            {"id": 23, "category": "Premier League", "difficulty": "medium",
+             "question": "Which player has the most goals in Premier League history?",
+             "options": ["Alan Shearer", "Wayne Rooney", "Sergio Agüero", "Harry Kane"],
+             "answer_index": 0},
+
+            {"id": 24, "category": "Premier League", "difficulty": "hard",
+             "question": "Which club was the first to reach 100 points in a Premier League season?",
+             "options": ["Manchester City", "Liverpool", "Chelsea", "Arsenal"],
+             "answer_index": 0},
+
+            {"id": 25, "category": "Premier League", "difficulty": "medium",
+             "question": "Who has the most assists in Premier League history?",
+             "options": ["Ryan Giggs", "Cesc Fàbregas", "Kevin De Bruyne", "Frank Lampard"],
+             "answer_index": 0},
+
+            {"id": 26, "category": "Premier League", "difficulty": "medium",
+             "question": "Which club's stadium is called 'Anfield'?",
+             "options": ["Liverpool", "Everton", "Manchester United", "Chelsea"],
+             "answer_index": 0},
+
+            {"id": 27, "category": "Premier League", "difficulty": "hard",
+             "question": "Who was the Premier League's first top scorer in 1992-93?",
+             "options": ["Alan Shearer", "Teddy Sheringham", "Ian Wright", "Eric Cantona"],
+             "answer_index": 1},
+
+            {"id": 28, "category": "Premier League", "difficulty": "medium",
+             "question": "Which manager has won the most Premier League titles?",
+             "options": ["Arsène Wenger", "Alex Ferguson", "Pep Guardiola", "José Mourinho"],
+             "answer_index": 1},
+
+            {"id": 29, "category": "Premier League", "difficulty": "medium",
+             "question": "Which goalkeeper has the most clean sheets in Premier League history?",
+             "options": ["Petr Čech", "David de Gea", "Alisson Becker", "Edwin van der Sar"],
+             "answer_index": 0},
+
+            {"id": 30, "category": "Premier League", "difficulty": "hard",
+             "question": "Which player won back-to-back PFA Player of the Year awards in 2006 and 2007?",
+             "options": ["Cristiano Ronaldo", "Thierry Henry", "John Terry", "Gareth Bale"],
+             "answer_index": 1},
+
+            // La Liga
+            {"id": 31, "category": "La Liga", "difficulty": "easy",
+             "question": "Which club does Lionel Messi hold the record for most goals with?",
+             "options": ["Barcelona", "PSG", "Inter Miami", "Newell's Old Boys"],
+             "answer_index": 0},
+
+            {"id": 32, "category": "La Liga", "difficulty": "medium",
+             "question": "Who managed Barcelona during their 2008–2012 golden era?",
+             "options": ["Frank Rijkaard", "Pep Guardiola", "Luis Enrique", "Ronald Koeman"],
+             "answer_index": 1},
+
+            {"id": 33, "category": "La Liga", "difficulty": "medium",
+             "question": "Which club is nicknamed 'Los Blancos'?",
+             "options": ["Barcelona", "Real Madrid", "Atletico Madrid", "Sevilla"],
+             "answer_index": 1},
+
+            {"id": 34, "category": "La Liga", "difficulty": "medium",
+             "question": "Which player won back-to-back Ballon d'Ors in 2013 and 2014?",
+             "options": ["Lionel Messi", "Cristiano Ronaldo", "Luka Modrić", "Neymar"],
+             "answer_index": 1},
+
+            {"id": 35, "category": "La Liga", "difficulty": "hard",
+             "question": "Which Spanish club's stadium is called 'San Mamés'?",
+             "options": ["Athletic Bilbao", "Valencia CF", "Real Sociedad", "Sevilla FC"],
+             "answer_index": 0},
+
+            // Legends
+            {"id": 36, "category": "Legends", "difficulty": "easy",
+             "question": "Which Brazilian player was nicknamed 'The Phenomenon'?",
+             "options": ["Ronaldinho", "Ronaldo Nazário", "Romário", "Pelé"],
+             "answer_index": 1},
+
+            {"id": 37, "category": "Legends", "difficulty": "medium",
+             "question": "For which club did Diego Maradona win the Serie A title?",
+             "options": ["Inter Milan", "Napoli", "Juventus", "AC Milan"],
+             "answer_index": 1},
+
+            {"id": 38, "category": "Legends", "difficulty": "hard",
+             "question": "Who was the youngest player ever to score in a FIFA World Cup?",
+             "options": ["Pelé", "Mbappé", "Messi", "Maradona"],
+             "answer_index": 0},
+
+            {"id": 39, "category": "Legends", "difficulty": "medium",
+             "question": "Which Dutch player introduced 'Total Football'?",
+             "options": ["Ruud Gullit", "Johan Cruyff", "Marco van Basten", "Dennis Bergkamp"],
+             "answer_index": 1},
+
+            {"id": 40, "category": "Legends", "difficulty": "medium",
+             "question": "Who captained Spain to their 2010 World Cup and 2012 Euro victories?",
+             "options": ["Sergio Ramos", "Iker Casillas", "Xavi Hernández", "Andrés Iniesta"],
+             "answer_index": 1},
+
+            // Records
+            {"id": 41, "category": "Records", "difficulty": "hard",
+             "question": "Who holds the record for the most goals in a single calendar year?",
+             "options": ["Cristiano Ronaldo", "Lionel Messi", "Robert Lewandowski", "Kylian Mbappé"],
+             "answer_index": 1},
+
+            {"id": 42, "category": "Records", "difficulty": "hard",
+             "question": "Which player has the most international goals in men's football?",
+             "options": ["Ali Daei", "Cristiano Ronaldo", "Lionel Messi", "Sunil Chhetri"],
+             "answer_index": 1},
+
+            {"id": 43, "category": "Records", "difficulty": "medium",
+             "question": "Who is the most expensive footballer in transfer history?",
+             "options": ["Kylian Mbappé", "Philippe Coutinho", "Neymar Jr.", "Cristiano Ronaldo"],
+             "answer_index": 2},
+
+            {"id": 44, "category": "Records", "difficulty": "medium",
+             "question": "Which player has won the most Ballon d'Or awards?",
+             "options": ["Cristiano Ronaldo", "Lionel Messi", "Michel Platini", "Luka Modrić"],
+             "answer_index": 1},
+
+            {"id": 45, "category": "Records", "difficulty": "hard",
+             "question": "Which African player has won the most Premier League Golden Boots?",
+             "options": ["Didier Drogba", "Mohamed Salah", "Sadio Mané", "Pierre-Emerick Aubameyang"],
+             "answer_index": 1},
+
+            {"id": 46, "category": "Records", "difficulty": "medium",
+             "question": "Which manager has won the most UEFA Champions League titles?",
+             "options": ["Pep Guardiola", "Carlo Ancelotti", "Zinedine Zidane", "Alex Ferguson"],
+             "answer_index": 1},
+
+            {"id": 47, "category": "Records", "difficulty": "medium",
+             "question": "Which club has the most domestic league titles in England?",
+             "options": ["Manchester United", "Liverpool", "Arsenal", "Everton"],
+             "answer_index": 0},
+
+            {"id": 48, "category": "Records", "difficulty": "medium",
+             "question": "Which player has the most assists in World Cup history?",
+             "options": ["Pelé", "Messi", "Maradona", "Kroos"],
+             "answer_index": 0},
+
+            {"id": 49, "category": "Records", "difficulty": "medium",
+             "question": "Which country won the Copa América 2021?",
+             "options": ["Brazil", "Argentina", "Chile", "Uruguay"],
+             "answer_index": 1},
+
+            {"id": 50, "category": "Records", "difficulty": "medium",
+             "question": "Who scored the fastest goal in World Cup history (as of 2022)?",
+             "options": ["Hakan Şükür", "Cristiano Ronaldo", "David Villa", "Mbappé"],
+             "answer_index": 0}
+        ];
+
+        // Game state
+        let currentCategory = '';
+        let quizQuestions = [];
+        let currentQuestionIndex = 0;
+        let points = 0;
+        let correctCount = 0;
+        let wrongCount = 0;
+        let currentStreak = 0;
+        let longestStreak = 0;
+        let hasAnswered = false;
+
+        // Utility functions
+        function shuffleArray(array) {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
+
+        function getQuestionsByCategory(category) {
+            if (category === 'Random') {
+                return shuffleArray(questions);
+            }
+            return shuffleArray(questions.filter(q => q.category === category));
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        // Game functions
+        function startQuiz(category) {
+            currentCategory = category;
+            quizQuestions = getQuestionsByCategory(category).slice(0, QUESTIONS_PER_GAME);
+            
+            // Reset game state
+            currentQuestionIndex = 0;
+            points = 0;
+            correctCount = 0;
+            wrongCount = 0;
+            currentStreak = 0;
+            longestStreak = 0;
+            hasAnswered = false;
+
+            updateScoreboard();
+            showScreen('quizScreen');
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            hasAnswered = false;
+            const question = quizQuestions[currentQuestionIndex];
+            
+            document.getElementById('categoryName').textContent = question.category;
+            document.getElementById('difficulty').textContent = `Difficulty: ${question.difficulty}`;
+            document.getElementById('questionText').textContent = question.question;
+            document.getElementById('questionNumber').textContent = 
+                `${currentQuestionIndex + 1}/${QUESTIONS_PER_GAME}`;
+            
+            // Load options
+            const optionsContainer = document.getElementById('optionsContainer');
+            optionsContainer.innerHTML = '';
+            
+            question.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.className = 'option-btn';
+                button.innerHTML = `<span class="option-number">${index + 1}</span>${option}`;
+                button.onclick = () => selectAnswer(index);
+                optionsContainer.appendChild(button);
+            });
+
+            // Hide feedback and reset next button
+            document.getElementById('feedback').classList.remove('show');
+            document.getElementById('streakBonus').style.display = 'none';
+            document.getElementById('nextBtn').disabled = true;
+        }
+
+        function selectAnswer(selectedIndex) {
+            if (hasAnswered) return;
+            hasAnswered = true;
+
+            const question = quizQuestions[currentQuestionIndex];
+            const isCorrect = selectedIndex === question.answer_index;
+            const buttons = document.querySelectorAll('.option-btn');
+            
+            // Disable all buttons
+            buttons.forEach((btn, index) => {
+                btn.disabled = true;
+                if (index === question.answer_index) {
+                    btn.classList.add('correct');
+                } else if (index === selectedIndex && !isCorrect) {
+                    btn.classList.add('wrong');
+                }
+            });
+
+            // Update feedback
+            const feedback = document.getElementById('feedback');
+            feedback.classList.add('show');
+            
+            if (isCorrect) {
+                correctCount++;
+                currentStreak++;
+                longestStreak = Math.max(longestStreak, currentStreak);
+                
+                let gainedPoints = CORRECT_POINTS;
+                feedback.textContent = '✓ Correct!';
+                feedback.className = 'feedback show correct';
+                
+                if (currentStreak >= BONUS_FROM_STREAK) {
+                    gainedPoints += BONUS_POINTS;
+                    const streakBonus = document.getElementById('streakBonus');
+                    streakBonus.textContent = `🔥 Streak Bonus! +${BONUS_POINTS} points`;
+                    streakBonus.style.display = 'block';
+                }
+                
+                points += gainedPoints;
+            } else {
+                wrongCount++;
+                currentStreak = 0;
+                feedback.textContent = `✗ Wrong. Correct answer: ${question.options[question.answer_index]}`;
+                feedback.className = 'feedback show wrong';
+            }
+
+            updateScoreboard();
+            document.getElementById('nextBtn').disabled = false;
+        }
+
+        function updateScoreboard() {
+            document.getElementById('currentPoints').textContent = points;
+            document.getElementById('currentStreak').textContent = currentStreak;
+            document.getElementById('correctCount').textContent = correctCount;
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+            
+            if (currentQuestionIndex < quizQuestions.length) {
+                loadQuestion();
+            } else {
+                showSummary();
+            }
+        }
+
+        function showSummary() {
+            const totalQuestions = quizQuestions.length;
+            const accuracy = totalQuestions > 0 ? ((correctCount / totalQuestions) * 100).toFixed(1) : 0;
+
+            document.getElementById('totalQuestions').textContent = totalQuestions;
+            document.getElementById('finalCorrect').textContent = correctCount;
+            document.getElementById('finalWrong').textContent = wrongCount;
+            document.getElementById('accuracy').textContent = `${accuracy}%`;
+            document.getElementById('longestStreak').textContent = longestStreak;
+            document.getElementById('finalPoints').textContent = points;
+
+            showScreen('summaryScreen');
+        }
+
+        function resetGame() {
+            showScreen('categoryScreen');
+        }
+    </script>
+</body>
+</html>
